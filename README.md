@@ -6,6 +6,8 @@ A learning project built manually in small, explainable increments. The first fe
 
 <img width="1700" height="862" alt="image" src="https://github.com/user-attachments/assets/5ae3096e-bc34-40bd-9639-5bfca8d2719e" />
 
+<img width="1677" height="789" alt="image" src="https://github.com/user-attachments/assets/ddff3c90-9c45-4a5e-8065-8ece0960201c" />
+
 ## Increment history
 
 These entries reflect the actual Git history. Pending work is listed separately.
