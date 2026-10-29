@@ -1,6 +1,15 @@
+using BankingFraudDetector.Infrastructure;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
+
+var connectionString =
+    builder.Configuration.GetConnectionString("FraudDatabase")
+    ?? throw new InvalidOperationException(
+        "Connection string 'FraudDatabase' was not configured.");
+
+builder.Services.AddInfrastructure(connectionString);
 
 var app = builder.Build();
 
