@@ -299,3 +299,34 @@ npm start
 With an explicit API_TARGET the launcher requires that endpoint to be running and does not start another API. Remove the variable with Remove-Item Env:API_TARGET to restore defaults. All browser calls remain same-origin /api requests; proxy.conf.cjs chooses the target, defaulting to https://127.0.0.1:7064. Development certificate validation is bypassed only for local startup/proxy checks. No .NET CORS changes were introduced.
 
 The observed error was reproduced as ECONNREFUSED from the development proxy when no API listener was available. Verified the repaired launcher with an already-running API, Angular HTTP responses, three history records, two component members and a five-node connection path through port 4200. The auto-start branch is provided but was not exercised against the user's already-running API. Failed history loading is distinguished from an empty history in the UI. Live browser visual QA and AI generation remain unverified.
+
+## Sequential multi-agent investigation
+
+The existing POST /api/assessments/{id}/investigations now resolves to SequentialAssessmentInvestigator. It runs three separate Agent Framework agents sequentially against the configured local Ollama model: EvidenceAgent, GraphAgent, then ReviewAgent. This uses an explicit C# orchestrator with typed handoffs and validation, not AgentWorkflowBuilder or a durable/checkpointed workflow runtime.
+
+EvidenceAgent receives the saved decision and current account-window events. GraphAgent receives direct shared-device links, GDS component context and up to three bounded path queries, plus the validated evidence report. ReviewAgent receives both reports and original sources and has no tools. For reliable structured handoffs on the local model, these agents perform JSON-only reasoning over fixed source snapshots; they have no model-selected tools. The original application/graph tools remain available in the legacy single-agent implementation. Mandatory source retrieval occurs in C# before model calls. The workflow uses in-process Application queries and does not require launching an MCP child process. MCP projects remain available independently.
+
+Local report calls disable thinking output and bound output to 900 tokens. The JSON schema fixes decision identity/score/band, restricts citations to source IDs, caps summaries at 600 characters and permits up to three short limitations; C# repeats these checks. Agents return structured AgentFindings with assessment/account identity, the unchanged recorded score/band, summary, evidence source IDs and limitations. C# rejects changed identities/decisions, blank or malformed results and citations outside a stage's supplied catalog. These checks validate structure and references, not every natural-language assertion. The review is another model pass, not a correctness guarantee. A canonical score/band header is composed from the saved record in C#.
+
+The response retains assessmentId, summary and model for Angular compatibility, and adds workflow (evidence-graph-review-v1) plus stages containing agent names, durations, summaries, source references and limitations. Results remain transient; no saved scores or assessment records are changed and no migration is required. Stage logs contain IDs, names, durations and error types, not full evidence/prompt bodies.
+
+AI settings now include StageTimeoutSeconds (180) and WorkflowTimeoutSeconds (540), alongside the existing HTTP timeout (300). Stages run sequentially; total time is longer than a single agent. Caller cancellation propagates. Invalid structured output maps to HTTP 502; deadlines map to 504. Missing graph data/projection is represented as unavailable evidence and does not become a claim of no connections. Saved assessment/event retrieval failures stop the workflow.
+
+Prompt inputs are bounded to 200 activity events, 50 direct links, 50 component members and three paths (six hops each). Truncation/coverage is explicit in source payloads. This first workflow is read-only and has no human approval checkpoint or autonomous account intervention. Authentication, durable workflow audit and evaluation remain later work.
+
+```mermaid
+flowchart LR
+    API[Existing investigation POST] --> Load[Load saved decision and activity]
+    Load --> Evidence[EvidenceAgent]
+    Evidence --> Check1[C# validation]
+    Check1 --> GraphSources[Load direct links, WCC and bounded paths]
+    GraphSources --> Graph[GraphAgent]
+    Graph --> Check2[C# validation]
+    Check2 --> Review[ReviewAgent with reports and original sources]
+    Review --> Check3[C# validation]
+    Check3 --> Response[Canonical decision plus summary and stage metadata]
+```
+
+Validation for this increment: full .NET Release and Angular production builds passed (existing NU1902/NU1903 dependency warnings remain). A transport-level smoke using synthetic Ollama responses and real SQL/graph reads confirmed the ordered EvidenceAgent -> GraphAgent -> ReviewAgent pipeline; an altered-score response stopped at stage one with 502. Separate guard checks rejected changed identities, unknown citations and blank output. HTTP checks confirmed missing assessment 404 and empty ID 400.
+
+A live qwen3:4b-instruct run completed all three stages with the recorded High/80 decision preserved: approximately 21s evidence, 66s graph, 86s review. Earlier unbounded schema attempts failed closed with malformed-output 502 or deadline 504; the bounded schema enabled completion. The live prose still made an unsupported event-arrival inference, demonstrating that schema/reference validation is not factual verification. Source/instruction wording now explicitly marks ingestion times unknown and the final response always includes that limitation; this wording refinement was not re-evaluated with another full live run. Analyst review and broader quality evaluation remain necessary. No assessment/event records were written by these read-only investigation checks, and temporary verification services were stopped. No permanent test projects were added.

@@ -1,6 +1,7 @@
 using BankingFraudDetector.Application.Investigations;
 using Microsoft.Extensions.DependencyInjection;
 using OllamaSharp;
+using BankingFraudDetector.AI.Workflows;
 
 namespace BankingFraudDetector.AI;
 
@@ -33,6 +34,9 @@ public static class DependencyInjection
             throw new ArgumentException("The timeout must be positive.");
         }
 
+        if (options.StageTimeoutSeconds <= 0 || options.WorkflowTimeoutSeconds <= 0)
+            throw new ArgumentException("Stage and workflow timeouts must be positive.");
+
         services.AddSingleton(options);
 
         services.AddSingleton<HttpClient>(_ => new HttpClient
@@ -46,9 +50,14 @@ public static class DependencyInjection
                 provider.GetRequiredService<HttpClient>(),
                 options.Model));
 
+        services.AddScoped<StructuredInvestigationAgent>();
+        services.AddScoped<EvidenceInvestigationAgent>();
+        services.AddScoped<GraphInvestigationAgent>();
+        services.AddScoped<ReviewInvestigationAgent>();
+        services.AddScoped<AgentFrameworkAssessmentInvestigator>();
         services.AddScoped<
             IAssessmentInvestigator,
-            AgentFrameworkAssessmentInvestigator>();
+            SequentialAssessmentInvestigator>();
 
         return services;
     }

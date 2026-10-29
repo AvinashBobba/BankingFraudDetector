@@ -1,5 +1,6 @@
 using BankingFraudDetector.Application.Investigations;
 using Microsoft.AspNetCore.Mvc;
+using BankingFraudDetector.AI.Workflows;
 
 namespace BankingFraudDetector.Api.Controllers;
 
@@ -32,6 +33,12 @@ public sealed class InvestigationsController(
         catch (KeyNotFoundException)
         {
             return NotFound();
+        }
+        catch (InvestigationOutputException)
+        {
+            return Problem(statusCode: StatusCodes.Status502BadGateway,
+                title: "Investigation output could not be validated.",
+                detail: "A specialist returned malformed output, changed decision fields or cited unsupported sources. No investigation was saved; retry or inspect the API logs.");
         }
         catch (OperationCanceledException)
     when (!cancellationToken.IsCancellationRequested)

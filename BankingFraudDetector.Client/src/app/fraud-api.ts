@@ -26,6 +26,9 @@ export class FraudApi {
 }
 export function errorMessage(error: unknown): string {
   if (error instanceof HttpErrorResponse) {
+    if (error.error && typeof error.error === 'object' && (error.error.detail || error.error.title)) {
+      return error.error.detail || error.error.title;
+    }
     if (error.status === 0 || error.status === 502) return 'Cannot reach the API. Check that it is running and the development proxy target is correct.';
     return error.error?.detail || error.error?.title || `Request failed (${error.status}). Check the API logs for details.`;
   }

@@ -142,3 +142,10 @@ Accept: application/json
 ### Same account: expect 400
 GET {{hostAddress}}/api/accounts/22222222-2222-2222-2222-222222222222/graph/paths/22222222-2222-2222-2222-222222222222
 Accept: application/json
+
+### Sequential evidence -> graph -> review workflow
+# Replace with an existing saved assessment ID. Same endpoint as before.
+# Expected: workflow evidence-graph-review-v1 and three ordered stages.
+# The local model can take several minutes; summary is generated, not saved.
+POST {{hostAddress}}/api/assessments/REPLACE_WITH_ASSESSMENT_ID/investigations
+Accept: application/json
