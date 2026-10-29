@@ -5,6 +5,7 @@ using BankingFraudDetector.Application.Investigations;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using OllamaSharp;
+using BankingFraudDetector.AI.Mcp;
 
 namespace BankingFraudDetector.AI;
 
@@ -12,7 +13,8 @@ public sealed class AgentFrameworkAssessmentInvestigator(
     GetAssessment getAssessment,
     GetAccountEvents getAccountEvents,
     OllamaApiClient chatClient,
-    OllamaOptions options)
+    OllamaOptions options,
+    AssessmentMcpGateway mcpGateway)
     : IAssessmentInvestigator
 {
     public async Task<InvestigationSummary> InvestigateAsync(
@@ -30,7 +32,7 @@ public sealed class AgentFrameworkAssessmentInvestigator(
         }
 
         var tools = new AssessmentInvestigationTools(
-            assessment, getAccountEvents, cancellationToken);
+            assessment, getAccountEvents, mcpGateway, cancellationToken);
 
         AIAgent agent = chatClient.AsAIAgent(
             name: "AssessmentInvestigator",

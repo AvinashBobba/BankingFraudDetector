@@ -164,3 +164,11 @@ Latest validation: the complete solution built successfully in Release configura
 - Current activity can contain events inserted after the saved assessment. It does not change the saved score. Summaries are returned without persistence.
 - Start Ollama with qwen3:4b-instruct available, restart the API, and use the investigation POST in the HTTP file with an existing assessment ID. Breakpoints in tool methods reveal model selections.
 - No database migration was needed. Live model/tool behavior has not been verified by the agent in this increment; the earlier request exceeded the original 100-second timeout.
+
+## MCP integration increment
+
+Added .NET stdio MCP server/client projects using ModelContextProtocol 2.3.0. The server exposes saved assessment evidence through Application; logs use stderr to keep stdout reserved for MCP. The console client lists tools and invokes the evidence tool with a saved assessment ID.
+
+The AI evidence tool now calls AssessmentMcpGateway, which launches the compiled server DLL, discovers the evidence tool, forwards the fixed assessment ID, checks errors and disposes the connection. Activity queries and the initial assessment lookup still run in-process. The server receives the database connection explicitly and a minimal environment. Configure Mcp:ServerDllPath for your machine and build the server before an investigation.
+
+This is a learning integration: a server process starts per evidence call. For our internal production path, direct Application queries remain the recommended default; MCP is useful as a reusable interface for other clients. No migration is required. End-to-end MCP/model execution has not been verified by the agent in this increment.

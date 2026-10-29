@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Text.Json;
 using BankingFraudDetector.Application.Events;
 using BankingFraudDetector.Domain.FraudDetection;
+using BankingFraudDetector.AI.Mcp;
 
 namespace BankingFraudDetector.AI.Tools;
 
@@ -9,33 +10,32 @@ namespace BankingFraudDetector.AI.Tools;
 public sealed class AssessmentInvestigationTools(
     AssessmentRecord assessment,
     GetAccountEvents getAccountEvents,
+    AssessmentMcpGateway mcpGateway,
     CancellationToken cancellationToken)
 {
     public bool EvidenceWasRequested { get; private set; }
 
-    [Description("Get the saved assessment evidence for the current investigation, " +
-        "including its recorded score, risk band, rule findings and evidence event IDs.")]
-    public string GetAssessmentEvidence()
+    [Description(
+     "Get the saved assessment evidence for the current investigation, " +
+     "including its recorded score, risk band, rule findings and evidence event IDs.")]
+    public async Task<string> GetAssessmentEvidence()
     {
+        var evidence = await mcpGateway.GetEvidenceAsync(
+            assessment.Id,
+            cancellationToken);
+
+        using var document = JsonDocument.Parse(evidence);
+
+        if (!document.RootElement.TryGetProperty("found", out var found) ||
+            found.ValueKind != JsonValueKind.True)
+        {
+            throw new InvalidOperationException(
+                "The MCP server did not return the requested assessment.");
+        }
+
         EvidenceWasRequested = true;
 
-        return JsonSerializer.Serialize(new
-        {
-            assessment.Id,
-            assessment.AccountId,
-            assessment.TotalScore,
-            riskBand = assessment.RiskBand.ToString(),
-            assessment.RuleSetVersion,
-            assessment.FromInclusiveUtc,
-            assessment.ToExclusiveUtc,
-            findings = assessment.Findings.Select(x => new
-            {
-                x.RuleCode,
-                x.Score,
-                x.Explanation,
-                x.EvidenceEventIds
-            })
-        });
+        return evidence;
     }
 
     [Description("Get the actual account activity events within the current assessment " +

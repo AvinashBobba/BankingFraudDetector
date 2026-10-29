@@ -5,5 +5,7 @@
   <Project Path="BankingFraudDetector.Domain.Tests/BankingFraudDetector.Domain.Tests.csproj" />
   <Project Path="BankingFraudDetector.Domain/BankingFraudDetector.Domain.csproj" />
   <Project Path="BankingFraudDetector.Infrastructure/BankingFraudDetector.Infrastructure.csproj" />
+  <Project Path="BankingFraudDetector.McpClient/BankingFraudDetector.McpClient.csproj" />
+  <Project Path="BankingFraudDetector.McpServer/BankingFraudDetector.McpServer.csproj" />
   <Project Path="BankingFraudDetector/BankingFraudDetector.csproj" />
 </Solution>
