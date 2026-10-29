@@ -42,6 +42,87 @@ namespace BankingFraudDetector.Infrastructure.Persistence.Migrations
 
                     b.ToTable("AccountEvents", (string)null);
                 });
+
+            modelBuilder.Entity("BankingFraudDetector.Domain.FraudDetection.AssessmentFinding", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AssessmentRecordId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.PrimitiveCollection<string>("EvidenceEventIds")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Explanation")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("RuleCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("Score")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssessmentRecordId");
+
+                    b.ToTable("AssessmentFindings", (string)null);
+                });
+
+            modelBuilder.Entity("BankingFraudDetector.Domain.FraudDetection.AssessmentRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("AssessedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("FromInclusiveUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("RiskBand")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RuleSetVersion")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTimeOffset>("ToExclusiveUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("TotalScore")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId", "AssessedAtUtc");
+
+                    b.ToTable("AssessmentRecords", (string)null);
+                });
+
+            modelBuilder.Entity("BankingFraudDetector.Domain.FraudDetection.AssessmentFinding", b =>
+                {
+                    b.HasOne("BankingFraudDetector.Domain.FraudDetection.AssessmentRecord", null)
+                        .WithMany("Findings")
+                        .HasForeignKey("AssessmentRecordId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BankingFraudDetector.Domain.FraudDetection.AssessmentRecord", b =>
+                {
+                    b.Navigation("Findings");
+                });
 #pragma warning restore 612, 618
         }
     }

@@ -16,7 +16,7 @@ public static class DependencyInjection
             options.UseSqlServer(connectionString));
 
         services.AddScoped<IAccountEventRepository, EfAccountEventRepository>();
-
+        services.AddScoped<IAssessmentRepository, EfAssessmentRepository>();
         return services;
     }
 }

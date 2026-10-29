@@ -77,3 +77,41 @@ Accept: application/json
 ### Reversed window: 400 validation problem
 GET {{hostAddress}}/api/risk-assessments/{{riskAccountId}}?fromInclusive=2026-10-29T11:00:00Z&toExclusive=2026-10-29T10:00:00Z
 Accept: application/json
+
+### Bank details changed — expect 201
+POST {{hostAddress}}/api/account-events
+Content-Type: application/json
+
+{
+  "accountId": "33333333-3333-3333-3333-333333333333",
+  "eventType": 5,
+  "occurredAt": "2026-10-29T12:00:00Z"
+}
+
+### Sale requested 15 minutes later — expect 201
+POST {{hostAddress}}/api/account-events
+Content-Type: application/json
+
+{
+  "accountId": "33333333-3333-3333-3333-333333333333",
+  "eventType": 6,
+  "occurredAt": "2026-10-29T12:15:00Z"
+}
+
+### Assess — expect totalScore 60, riskBand Medium, rule PAY-001
+GET {{hostAddress}}/api/risk-assessments/33333333-3333-3333-3333-333333333333?fromInclusive=2026-10-29T12:00:00Z&toExclusive=2026-10-29T14:00:00Z
+Accept: application/json
+
+### Run and save an assessment for the ATO sample account
+POST {{hostAddress}}/api/assessments
+Content-Type: application/json
+
+{
+  "accountId": "22222222-2222-2222-2222-222222222222",
+  "fromInclusive": "2026-10-29T10:00:00Z",
+  "toExclusive": "2026-10-29T11:00:00Z"
+}
+
+### Retrieve the saved assessment — paste the returned assessmentId
+GET {{hostAddress}}/api/assessments/1C3EDB4F-774E-4029-AA69-55C7AD0F3170
+Accept: application/json

@@ -2,7 +2,7 @@ using BankingFraudDetector.Domain.Events;
 
 namespace BankingFraudDetector.Domain.FraudDetection;
 
-public sealed class AccountTakeoverSequenceRule
+public sealed class AccountTakeoverSequenceRule : IFraudRule
 {
     public const string Code = "ATO-001";
 

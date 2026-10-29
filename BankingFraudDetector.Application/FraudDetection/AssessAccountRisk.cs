@@ -5,7 +5,7 @@ namespace BankingFraudDetector.Application.FraudDetection;
 
 public sealed class AssessAccountRisk(
     IAccountEventRepository repository,
-    AccountTakeoverSequenceRule rule)
+    IEnumerable<IFraudRule> rules)
 {
     public async Task<FraudAssessment> ExecuteAsync(
         Guid accountId,
@@ -33,11 +33,17 @@ public sealed class AssessAccountRisk(
             toExclusive,
             cancellationToken);
 
-        var match = rule.Evaluate(accountId, events);
+        var matches = new List<RuleMatch>();
 
-        IReadOnlyList<RuleMatch> matches = match is null
-            ? Array.Empty<RuleMatch>()
-            : new[] { match };
+        foreach (var rule in rules)
+        {
+            var match = rule.Evaluate(accountId, events);
+
+            if (match is not null)
+            {
+                matches.Add(match);
+            }
+        }
 
         var totalScore = matches.Sum(x => x.Score);
 

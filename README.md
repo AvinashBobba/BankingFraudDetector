@@ -1,5 +1,4 @@
 # Banking Fraud Detector
-
 A learning project built manually in small, explainable increments. The first feature detects suspicious sequences of investor account events using deterministic rules. Agentic investigation and graph analytics follow once the underlying evidence is available.
 
 ## Increment history
@@ -20,6 +19,8 @@ These entries reflect the actual Git history. Pending work is listed separately.
 | `2cc1a10` | EF Core model | Added the SQL Server provider, context and event mapping. |
 
 | `1a866e0` | Database migration | Configured SQL Server, added EF tooling and applied InitialCreate. |
+| `9789d5e` | Event ingestion | Added repository, recording use case, controllers and HTTP requests; corrected Persistence folder naming. |
+| `5dfaa67` | Risk assessment | Added event querying, ATO-001, assessment use case/controller, domain tests and HTTP scenarios. |
 
 For each future increment, append its commit hash, purpose and validation after committing. Keep planned work separate from completed work.
 
@@ -71,9 +72,9 @@ Normal application runs reuse the database. Create a new migration only when the
 
 ## Planned increments
 
-1. Complete database registration and generate/apply the initial migration.
-2. Implement the event repository and event ingestion use case/API endpoint.
-3. Add deterministic event-sequence detection, time windows, risk bands and evidence.
+1. Add Application-level assessment tests using an in-memory test double.
+2. Add additional fraud rules and define how their scores combine.
+3. Define continuous-detection lookback and assessment persistence.
 4. Add an Angular analyst interface.
 5. Add local Neo4j, shared-identifier queries and graph data science exercises.
 6. Add `BankingFraudDetector.AI` for Microsoft Agent Framework agents, workflow orchestration, tool registration and local Ollama model access. It will reference Application; Domain and Application will remain independent of the framework.
@@ -104,4 +105,13 @@ Open the Aspire dashboard URL printed in the terminal, select the fraud-api HTTP
 ## Event ingestion increment
 
 Implemented the EF event repository and Application recording use case, registered dependencies, and exposed POST /api/account-events through AccountEventsController. Moved the responsiveness endpoint to HealthController and added HTTP sample requests. Corrected the Persistence folder spelling. No schema change was needed. Validation: API build passed; existing NU1902/NU1903 dependency warnings remain. HTTP samples are provided for manual execution.
+
+
+## Current risk assessment behavior
+
+GET /api/account-events queries account history within an inclusive-start, exclusive-end window. GET /api/risk-assessments/{accountId} evaluates that history without storing an assessment. ATO-001 matches password reset, then MFA enrolment, then contact change with strictly increasing timestamps within 30 minutes (boundary included). It contributes 80 points once per evaluation and returns three evidence event IDs. Current thresholds are Low below 40, Medium from 40, High from 80. No match means no implemented pattern was found; it does not prove safety. Sequences beginning before the query window are excluded.
+
+Validation completed in the preceding increment: all nine domain cases passed; API built to a separate verification output because the running API locked normal outputs. Existing dependency warnings remain. HTTP scenarios are manual requests, not automated tests. In BankingFraudDetector.Api.http, set hostAddress from Aspire, send the three risk-scenario POSTs, then the assessment GET; expect 80 / High / ATO-001. The shortened window expects 0 / Low, and reversed boundaries expect 400. Each repeated POST inserts another event.
+
+Next increment: Application assessment tests. These have not been implemented yet. No new migration is required for the assessment query or these tests.
 
