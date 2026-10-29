@@ -1,5 +1,10 @@
 # Banking Fraud Detector
 A learning project built manually in small, explainable increments. The first feature detects suspicious sequences of investor account events using deterministic rules. Agentic investigation and graph analytics follow once the underlying evidence is available.
+<img width="1699" height="864" alt="image" src="https://github.com/user-attachments/assets/36f03683-b957-419f-93c8-7504f784d6ef" />
+
+<img width="1706" height="598" alt="image" src="https://github.com/user-attachments/assets/0f3511a5-9157-40c4-aee2-802376e23f89" />
+
+<img width="1700" height="862" alt="image" src="https://github.com/user-attachments/assets/5ae3096e-bc34-40bd-9639-5bfca8d2719e" />
 
 ## Increment history
 
