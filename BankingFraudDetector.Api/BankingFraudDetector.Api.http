@@ -131,3 +131,14 @@ Accept: application/json
 ### Separate device — expect []
 GET {{hostAddress}}/api/accounts/44444444-4444-4444-4444-444444444444/graph/shared-devices
 Accept: application/json
+### Explain an indirect connection: expect five nodes / four relationship hops
+GET {{hostAddress}}/api/accounts/22222222-2222-2222-2222-222222222222/graph/paths/55555555-5555-5555-5555-555555555555
+Accept: application/json
+
+### Separate component: expect found false and path null
+GET {{hostAddress}}/api/accounts/22222222-2222-2222-2222-222222222222/graph/paths/44444444-4444-4444-4444-444444444444
+Accept: application/json
+
+### Same account: expect 400
+GET {{hostAddress}}/api/accounts/22222222-2222-2222-2222-222222222222/graph/paths/22222222-2222-2222-2222-222222222222
+Accept: application/json

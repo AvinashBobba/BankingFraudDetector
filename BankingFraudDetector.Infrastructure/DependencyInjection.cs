@@ -34,6 +34,7 @@ public static class DependencyInjection
                 AuthTokens.Basic(username, password)));
 
         services.AddScoped<IAccountGraph, Neo4jAccountGraph>();
+        services.AddScoped<IAccountConnectionPaths, Neo4jAccountConnectionPaths>();
 
         return services;
     }

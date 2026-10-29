@@ -17,7 +17,8 @@ public sealed class AgentFrameworkAssessmentInvestigator(
     OllamaOptions options,
     AssessmentMcpGateway mcpGateway,
     FindLinkedAccounts findLinkedAccounts,
-    FindConnectedAccounts findConnectedAccounts)
+    FindConnectedAccounts findConnectedAccounts,
+    FindAccountConnectionPath findConnectionPath)
     : IAssessmentInvestigator
 {
     public async Task<InvestigationSummary> InvestigateAsync(
@@ -40,6 +41,7 @@ public sealed class AgentFrameworkAssessmentInvestigator(
                                 assessment.AccountId,
                                 findLinkedAccounts,
                                 findConnectedAccounts,
+                                findConnectionPath,
                                 cancellationToken);
 
         AIAgent agent = chatClient.AsAIAgent(
@@ -67,6 +69,9 @@ public sealed class AgentFrameworkAssessmentInvestigator(
             FindAccountsInConnectedComponent.
             Distinguish direct shared-device links from component membership.
             Component membership does not reveal the exact connecting path.
+            To explain a discovered connection, call GetAccountConnectionPath.
+            Only describe a path actually returned by that tool; do not invent intermediate links.
+            Path results use the current graph and may differ from the GDS snapshot.
             If graph analysis is unavailable, state that limitation.
             Never interpret unavailable analysis as evidence of no connections.
             Keep your response under 200 words.
@@ -76,7 +81,8 @@ public sealed class AgentFrameworkAssessmentInvestigator(
                 AIFunctionFactory.Create(tools.GetAssessmentEvidence),
                 AIFunctionFactory.Create(tools.GetAccountActivityEvents),
                 AIFunctionFactory.Create(graphTools.FindAccountsSharingDevices),
-                AIFunctionFactory.Create(graphTools.FindAccountsInConnectedComponent)
+                AIFunctionFactory.Create(graphTools.FindAccountsInConnectedComponent),
+                AIFunctionFactory.Create(graphTools.GetAccountConnectionPath)
             ]);
 
         var response = await agent.RunAsync(

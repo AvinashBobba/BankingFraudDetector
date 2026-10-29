@@ -248,3 +248,13 @@ AccountGraphTools now exposes connected-component analysis alongside direct shar
 Extended synthetic seeds with account 5555... connected to 3333... through synthetic-device-bridge. Account 2222... directly shares a device with 3333..., while its component also includes 5555.... The startup seed script now automatically rebuilds fraud-device-graph after seeding; graph readiness follows projection creation. All existing destructive reset behavior remains enabled.
 
 Verified the running projection contains seven nodes and ten projected relationships. The Release solution build passed with existing dependency warnings. Live controller/model behavior was not exercised in this increment. No EF migration was needed. Next: connection-path evidence for indirect links.
+
+## Neo4j MVP scope complete: connection-path evidence
+
+Added IAccountConnectionPaths, FindAccountConnectionPath and a Neo4j implementation returning one shortest USED_DEVICE path within six relationship hops. The query is parameterized, has a 15-second transaction timeout and reads the current database without a GDS projection. Ordered path nodes distinguish Account and Device identifiers. Equal/empty IDs are rejected; no result means no path found within the bound (or missing endpoints), not proof of no relationship.
+
+GET /api/accounts/{accountId}/graph/paths/{targetAccountId} returns found, maxHops and path. AccountGraphTools exposes GetAccountConnectionPath with the source account fixed by the assessment, and the investigator registers it alongside existing tools. Instructions require returned path evidence before describing intermediate connections. API sample requests cover an indirect path, no path and invalid identical accounts.
+
+Validation: full Release build passed with existing dependency warnings. A temporary local API instance was used to verify direct links (3333...), component membership (3333... and 5555...), the ordered four-hop path from 2222... to 5555..., no path to 4444..., and HTTP 400 for identical endpoints. Live model selection of the new tool was not tested. No new unit tests or EF migrations were added.
+
+This closes the current graph MVP scope: destructive local reset/seeding, GDS projection readiness, shared-device lookup, WCC membership, path evidence, API endpoints and agent tools. More graph algorithms, bank/email/IP graph expansion, temporal projections, ingestion synchronization and production-scale analytics scheduling are future requirements, not blockers for moving to Angular. WCC still runs per request on a snapshot, and current graph evidence may differ from saved assessment-time data. The development graph resets on every restart as requested.

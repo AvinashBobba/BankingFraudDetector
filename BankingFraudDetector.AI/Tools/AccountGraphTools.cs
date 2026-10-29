@@ -8,8 +8,26 @@ public sealed class AccountGraphTools(
     Guid accountId,
     FindLinkedAccounts findLinkedAccounts,
     FindConnectedAccounts findConnectedAccounts,
+    FindAccountConnectionPath findConnectionPath,
     CancellationToken cancellationToken)
 {
+    [Description("Explain a connection to a target account by returning one shortest account/device path, up to six relationship hops. The source is fixed to the account under investigation. Use after discovering a linked account. This queries the current graph, not the GDS snapshot; a missing path is not proof of no connection.")]
+    public async Task<string> GetAccountConnectionPath(
+        [Description("The other account ID to explain a connection to.")] Guid targetAccountId)
+    {
+        if (targetAccountId == Guid.Empty || targetAccountId == accountId)
+            return JsonSerializer.Serialize(new { available = false, reason = "A distinct, nonempty target account ID is required." });
+
+        var path = await findConnectionPath.ExecuteAsync(accountId, targetAccountId, cancellationToken);
+        return JsonSerializer.Serialize(new
+        {
+            found = path is not null,
+            maxHops = 6,
+            path,
+            limitation = "Current graph evidence only; connectivity does not prove fraud. No path within six hops does not rule out longer connections."
+        });
+    }
+
     [Description(
         "Find other accounts that share devices with the account under " +
         "investigation. Use when investigating linked accounts or shared " +
