@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="BankingFraudDetector.Application/BankingFraudDetector.Application.csproj" />
   <Project Path="BankingFraudDetector.Domain/BankingFraudDetector.Domain.csproj" />
+  <Project Path="BankingFraudDetector.Infrastructure/BankingFraudDetector.Infrastructure.csproj" />
   <Project Path="BankingFraudDetector/BankingFraudDetector.csproj" />
 </Solution>
