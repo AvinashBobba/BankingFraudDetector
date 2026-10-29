@@ -1,6 +1,29 @@
-@BankingFraudDetector.Api_HostAddress = http://localhost:5256
+# For Aspire, use the API HTTPS endpoint from the dashboard.
+@hostAddress = https://localhost:7064
 
-GET {{BankingFraudDetector.Api_HostAddress}}/weatherforecast/
+GET {{hostAddress}}/health
 Accept: application/json
 
 ###
+
+# Record a password reset. Expected: 201 with eventId.
+# Each send inserts another event into the existing database.
+POST {{hostAddress}}/api/account-events
+Content-Type: application/json
+Accept: application/json
+
+{
+  "accountId": "11111111-1111-1111-1111-111111111111",
+  "eventType": 1,
+  "occurredAt": "2026-10-29T15:00:00Z"
+}
+
+### Empty account ID: expected 400, no event inserted.
+POST {{hostAddress}}/api/account-events
+Content-Type: application/json
+
+{
+  "accountId": "00000000-0000-0000-0000-000000000000",
+  "eventType": 1,
+  "occurredAt": "2026-10-29T15:00:00Z"
+}

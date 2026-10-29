@@ -19,7 +19,7 @@ These entries reflect the actual Git history. Pending work is listed separately.
 | `573b607` | Naming | Renamed the account event type. |
 | `2cc1a10` | EF Core model | Added the SQL Server provider, context and event mapping. |
 
-Current uncommitted increment: database connection configuration, Infrastructure dependency registration, EF Core 10.0.14 local tooling and Design package, and the InitialCreate migration. Applied migration `20261029144956_InitialCreate` successfully to `Avinash_Bobba`, database `BankingFraudDetector`; created AccountEvents, its account/time index and the migration history entry. The API build succeeded. Restore reported existing NU1902/NU1903 warnings for transitive System.Security.Cryptography.Pkcs 9.0.11. This README is also new.
+| `1a866e0` | Database migration | Configured SQL Server, added EF tooling and applied InitialCreate. |
 
 For each future increment, append its commit hash, purpose and validation after committing. Keep planned work separate from completed work.
 
@@ -99,4 +99,9 @@ Open the Aspire dashboard URL printed in the terminal, select the fraud-api HTTP
 - [EF Core migrations](https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/)
 - [SQL Server LocalDB](https://learn.microsoft.com/en-us/sql/database-engine/configure-windows/sql-server-express-localdb)
 - [Microsoft Agent Framework tools](https://learn.microsoft.com/en-us/agent-framework/agents/tools/)
+
+
+## Event ingestion increment
+
+Implemented the EF event repository and Application recording use case, registered dependencies, and exposed POST /api/account-events through AccountEventsController. Moved the responsiveness endpoint to HealthController and added HTTP sample requests. Corrected the Persistence folder spelling. No schema change was needed. Validation: API build passed; existing NU1902/NU1903 dependency warnings remain. HTTP samples are provided for manual execution.
 

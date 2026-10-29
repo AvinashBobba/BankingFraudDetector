@@ -1,8 +1,11 @@
 using BankingFraudDetector.Infrastructure;
+using BankingFraudDetector.Application;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddApplication();
 builder.Services.AddOpenApi();
+builder.Services.AddControllers();
 
 var connectionString =
     builder.Configuration.GetConnectionString("FraudDatabase")
@@ -20,10 +23,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapGet("/health", () => Results.Ok(new
-{
-    status = "Healthy",
-    service = "BankingFraudDetector.Api"
-}));
+app.MapControllers();
 
 app.Run();

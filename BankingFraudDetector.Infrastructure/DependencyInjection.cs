@@ -1,4 +1,6 @@
+using BankingFraudDetector.Application.Abstractions;
 using BankingFraudDetector.Infrastructure.Persistence;
+using BankingFraudDetector.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,6 +14,8 @@ public static class DependencyInjection
     {
         services.AddDbContext<FraudDbContext>(options =>
             options.UseSqlServer(connectionString));
+
+        services.AddScoped<IAccountEventRepository, EfAccountEventRepository>();
 
         return services;
     }
