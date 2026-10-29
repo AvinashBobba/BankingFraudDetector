@@ -172,3 +172,69 @@ Added .NET stdio MCP server/client projects using ModelContextProtocol 2.3.0. Th
 The AI evidence tool now calls AssessmentMcpGateway, which launches the compiled server DLL, discovers the evidence tool, forwards the fixed assessment ID, checks errors and disposes the connection. Activity queries and the initial assessment lookup still run in-process. The server receives the database connection explicitly and a minimal environment. Configure Mcp:ServerDllPath for your machine and build the server before an investigation.
 
 This is a learning integration: a server process starts per evidence call. For our internal production path, direct Application queries remain the recommended default; MCP is useful as a reusable interface for other clients. No migration is required. End-to-end MCP/model execution has not been verified by the agent in this increment.
+
+## Local Neo4j: destructive development reset
+
+Docker Compose starts Neo4j Community with a named data volume and loopback-only ports. Copy .env.example to .env and choose a password, or use the generated local .env if already present. The actual .env is ignored by Git. Open http://localhost:7474 and sign in as neo4j with that password.
+
+IMPORTANT: per the requested development behavior, EVERY container start deletes all graph nodes and relationships and inserts the synthetic graph again. This includes stop/start, restart, and container recreation. Constraints remain and are created if absent. This setup is not suitable for graphs whose data must be retained. SQL Server is unaffected.
+
+```powershell
+docker compose up -d --wait
+docker compose stop neo4j
+docker compose start --wait neo4j
+docker compose restart neo4j
+```
+
+The startup wrapper waits for Neo4j, runs dev/neo4j/reset-and-seed.cypher and marks readiness only after successful seeding. Wait for healthy status before querying; restart returns before seeding necessarily completes. A failed seed leaves the container unhealthy. docker compose up on an already-running container does not reset it; a real start/restart does.
+
+Seeds: three Account nodes, two Device nodes and three USED_DEVICE relationships. Accounts 2222... and 3333... share synthetic-device-shared; account 4444... uses synthetic-device-separate. View them with:
+
+```cypher
+MATCH (a:Account)-[r:USED_DEVICE]->(d:Device)
+RETURN a, r, d;
+```
+
+Neo4j driver integration and graph data science are subsequent manual steps; no EF migration is involved here. Changing the .env password does not change credentials already stored in the named volume.
+
+Verified locally: initial startup, container restart, and force recreation all reached healthy status. After restart/recreation a temporary ResetVerification node was removed and the graph contained exactly five nodes and three USED_DEVICE relationships. Shell syntax and Git whitespace checks passed.
+
+## Shared-device investigation and GDS increment
+
+Implemented IAccountGraph through Neo4jAccountGraph using a parameterized shared-device query. Added FindLinkedAccounts, GET /api/accounts/{accountId}/graph/shared-devices, manual HTTP samples and AccountGraphTools. The investigator now has a third function tool for linked accounts. Graph results are current context, not proof of fraud, and do not alter saved rule scores.
+
+The API requires Neo4j:Uri, Neo4j:Username and Neo4j:Password. Store the password in API user secrets (the Compose .env is not loaded by the API). The driver is singleton; each graph query opens a session with a 15-second transaction timeout. Cancellation is checked around the operation, not passed to every driver operation.
+
+Enabled graph-data-science through NEO4J_PLUGINS. Verified the running server reports GDS 2026.10.1. The full Release solution build passed; existing NU1902/NU1903 warnings remain. No new unit tests or live agent calls were run. No EF migration was required. The existing destructive graph reset on every start remains enabled.
+
+### Next manual exercise: connected components
+
+Run these statements separately in Neo4j Browser. Dropping the projection removes only its in-memory copy, not database nodes.
+
+```cypher
+CALL gds.graph.drop('fraud-device-graph', false);
+```
+
+```cypher
+CALL gds.graph.project(
+  'fraud-device-graph',
+  ['Account', 'Device'],
+  {USED_DEVICE: {orientation: 'UNDIRECTED'}}
+)
+YIELD graphName, nodeCount, relationshipCount
+RETURN graphName, nodeCount, relationshipCount;
+```
+
+The seed projects five nodes and six directed adjacency entries (three stored relationships projected in both directions).
+
+```cypher
+CALL gds.wcc.stream('fraud-device-graph')
+YIELD nodeId, componentId
+WITH componentId, gds.util.asNode(nodeId) AS node
+RETURN componentId,
+       collect(coalesce(node.accountId, node.deviceId)) AS members,
+       count(*) AS nodeCount
+ORDER BY nodeCount DESC;
+```
+
+Expect two components with three and two nodes respectively. Component IDs can change across projections; they are not stable business identifiers. WCC identifies connected components, not fraudulent communities. Stream mode does not write results to stored nodes. The projection is an in-memory snapshot: rebuild after graph changes or a Neo4j restart. This exercise is documented for manual execution and has not been run by the agent.

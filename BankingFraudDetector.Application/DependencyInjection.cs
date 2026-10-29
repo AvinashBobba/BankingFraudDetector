@@ -2,6 +2,7 @@ using BankingFraudDetector.Application.Events;
 using Microsoft.Extensions.DependencyInjection;
 using BankingFraudDetector.Application.FraudDetection;
 using BankingFraudDetector.Domain.FraudDetection;
+using BankingFraudDetector.Application.Graphs;
 namespace BankingFraudDetector.Application;
 
 public static class DependencyInjection
@@ -18,6 +19,7 @@ public static class DependencyInjection
         services.AddScoped<RunAccountAssessment>();
         services.AddScoped<GetAssessment>();
         services.AddScoped<GetAccountAssessmentHistory>();
+        services.AddScoped<FindLinkedAccounts>();
         return services;
     }
 }

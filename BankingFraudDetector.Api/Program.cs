@@ -37,6 +37,23 @@ builder.Services.AddScoped<AssessmentMcpGateway>(provider =>
         provider.GetRequiredService<AssessmentMcpOptions>(),
         connectionString));
 
+var neo4jUri = builder.Configuration["Neo4j:Uri"]
+    ?? throw new InvalidOperationException(
+        "Neo4j URI was not configured.");
+
+var neo4jUsername = builder.Configuration["Neo4j:Username"]
+    ?? throw new InvalidOperationException(
+        "Neo4j username was not configured.");
+
+var neo4jPassword = builder.Configuration["Neo4j:Password"]
+    ?? throw new InvalidOperationException(
+        "Neo4j password was not configured.");
+
+builder.Services.AddGraphInfrastructure(
+    neo4jUri,
+    neo4jUsername,
+    neo4jPassword);
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

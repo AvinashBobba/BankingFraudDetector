@@ -1,0 +1,25 @@
+# Development only: EVERY Neo4j start deletes all nodes/relationships and reseeds.
+services:
+  neo4j:
+    image: neo4j:2026.10.1
+    ports:
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
+    environment:
+      NEO4J_AUTH: "neo4j/${NEO4J_PASSWORD:?Set NEO4J_PASSWORD in .env}"
+      SEED_PASSWORD: "${NEO4J_PASSWORD:?Set NEO4J_PASSWORD in .env}"
+      NEO4J_PLUGINS: '["graph-data-science"]'
+    volumes:
+      - neo4j-data:/data
+      - ./dev/neo4j:/seed:ro
+    entrypoint: ["/bin/bash", "/seed/start.sh"]
+    command: ["neo4j"]
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/fraud-seed-ready && cypher-shell -a bolt://localhost:7687 -u neo4j -p \"$$SEED_PASSWORD\" 'RETURN 1;' >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 30s
+
+volumes:
+  neo4j-data:

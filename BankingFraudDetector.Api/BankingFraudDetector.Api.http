@@ -123,3 +123,11 @@ Accept: application/json
 ### Generate an AI explanation of a saved assessment
 POST {{hostAddress}}/api/assessments/1C3EDB4F-774E-4029-AA69-55C7AD0F3170/investigations
 Accept: application/json
+
+### Find accounts sharing a device — expect account 3333...
+GET {{hostAddress}}/api/accounts/22222222-2222-2222-2222-222222222222/graph/shared-devices
+Accept: application/json
+
+### Separate device — expect []
+GET {{hostAddress}}/api/accounts/44444444-4444-4444-4444-444444444444/graph/shared-devices
+Accept: application/json

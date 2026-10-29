@@ -6,6 +6,7 @@ using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using OllamaSharp;
 using BankingFraudDetector.AI.Mcp;
+using BankingFraudDetector.Application.Graphs;
 
 namespace BankingFraudDetector.AI;
 
@@ -14,7 +15,8 @@ public sealed class AgentFrameworkAssessmentInvestigator(
     GetAccountEvents getAccountEvents,
     OllamaApiClient chatClient,
     OllamaOptions options,
-    AssessmentMcpGateway mcpGateway)
+    AssessmentMcpGateway mcpGateway,
+    FindLinkedAccounts findLinkedAccounts)
     : IAssessmentInvestigator
 {
     public async Task<InvestigationSummary> InvestigateAsync(
@@ -33,6 +35,10 @@ public sealed class AgentFrameworkAssessmentInvestigator(
 
         var tools = new AssessmentInvestigationTools(
             assessment, getAccountEvents, mcpGateway, cancellationToken);
+        var graphTools = new AccountGraphTools(
+                                assessment.AccountId,
+                                findLinkedAccounts,
+                                cancellationToken);
 
         AIAgent agent = chatClient.AsAIAgent(
             name: "AssessmentInvestigator",
@@ -50,18 +56,25 @@ public sealed class AgentFrameworkAssessmentInvestigator(
             Evidence IDs identify events; inspect activity with the activity tool when needed.
             Explain findings, limitations and suggested analyst checks.
             No findings does not prove an account is safe.
+            When asked about linked accounts or shared devices,
+            call FindAccountsSharingDevices.
+            Graph links are contextual signals and do not confirm fraud.
+            The graph is current and is not restricted to the assessment window.
+            Do not change the saved score based on graph results.
             Keep your response under 200 words.
             """,
             tools:
             [
                 AIFunctionFactory.Create(tools.GetAssessmentEvidence),
-                AIFunctionFactory.Create(tools.GetAccountActivityEvents)
+                AIFunctionFactory.Create(tools.GetAccountActivityEvents),
+                AIFunctionFactory.Create(graphTools.FindAccountsSharingDevices)
             ]);
 
         var response = await agent.RunAsync(
-            $"Investigate saved assessment {assessmentId}. " +
-            "Inspect the activity timeline and verify the event timestamps.",
-            cancellationToken: cancellationToken);
+                        $"Investigate saved assessment {assessmentId}. " +
+                        "Inspect the activity timeline and verify event timestamps. " +
+                        "Check whether other accounts share devices with this account.",
+                        cancellationToken: cancellationToken);
 
         if (!tools.EvidenceWasRequested)
         {
