@@ -30,4 +30,42 @@ public sealed class AccountEventsController(RecordAccountEvent useCase) : Contro
 
         return StatusCode(StatusCodes.Status201Created, new { eventId });
     }
+
+    [HttpGet]
+    public async Task<IActionResult> Get(
+        [FromQuery] Guid accountId,
+        [FromQuery] DateTimeOffset fromInclusive,
+        [FromQuery] DateTimeOffset toExclusive,
+        [FromServices] GetAccountEvents query,
+        CancellationToken cancellationToken)
+    {
+        if (accountId == Guid.Empty)
+            ModelState.AddModelError(
+                "accountId", "An account ID is required.");
+
+        if (fromInclusive == default || toExclusive == default)
+            ModelState.AddModelError(
+                "timeWindow", "Both time boundaries are required.");
+
+        if (fromInclusive >= toExclusive)
+            ModelState.AddModelError(
+                "timeWindow", "The start must precede the end.");
+
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
+        var events = await query.ExecuteAsync(
+            accountId,
+            fromInclusive,
+            toExclusive,
+            cancellationToken);
+
+        return Ok(events.Select(accountEvent => new
+        {
+            accountEvent.Id,
+            accountEvent.AccountId,
+            accountEvent.EventType,
+            accountEvent.OccurredAtUtc
+        }));
+    }
 }
