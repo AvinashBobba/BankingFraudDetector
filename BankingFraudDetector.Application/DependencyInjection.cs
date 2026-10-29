@@ -20,6 +20,7 @@ public static class DependencyInjection
         services.AddScoped<GetAssessment>();
         services.AddScoped<GetAccountAssessmentHistory>();
         services.AddScoped<FindLinkedAccounts>();
+        services.AddScoped<FindConnectedAccounts>();
         return services;
     }
 }

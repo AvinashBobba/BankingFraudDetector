@@ -16,7 +16,8 @@ public sealed class AgentFrameworkAssessmentInvestigator(
     OllamaApiClient chatClient,
     OllamaOptions options,
     AssessmentMcpGateway mcpGateway,
-    FindLinkedAccounts findLinkedAccounts)
+    FindLinkedAccounts findLinkedAccounts,
+    FindConnectedAccounts findConnectedAccounts)
     : IAssessmentInvestigator
 {
     public async Task<InvestigationSummary> InvestigateAsync(
@@ -38,6 +39,7 @@ public sealed class AgentFrameworkAssessmentInvestigator(
         var graphTools = new AccountGraphTools(
                                 assessment.AccountId,
                                 findLinkedAccounts,
+                                findConnectedAccounts,
                                 cancellationToken);
 
         AIAgent agent = chatClient.AsAIAgent(
@@ -61,19 +63,26 @@ public sealed class AgentFrameworkAssessmentInvestigator(
             Graph links are contextual signals and do not confirm fraud.
             The graph is current and is not restricted to the assessment window.
             Do not change the saved score based on graph results.
+            For wider networks or indirect links, use
+            FindAccountsInConnectedComponent.
+            Distinguish direct shared-device links from component membership.
+            Component membership does not reveal the exact connecting path.
+            If graph analysis is unavailable, state that limitation.
+            Never interpret unavailable analysis as evidence of no connections.
             Keep your response under 200 words.
             """,
             tools:
             [
                 AIFunctionFactory.Create(tools.GetAssessmentEvidence),
                 AIFunctionFactory.Create(tools.GetAccountActivityEvents),
-                AIFunctionFactory.Create(graphTools.FindAccountsSharingDevices)
+                AIFunctionFactory.Create(graphTools.FindAccountsSharingDevices),
+                AIFunctionFactory.Create(graphTools.FindAccountsInConnectedComponent)
             ]);
 
         var response = await agent.RunAsync(
                         $"Investigate saved assessment {assessmentId}. " +
-                        "Inspect the activity timeline and verify event timestamps. " +
-                        "Check whether other accounts share devices with this account.",
+                        "Inspect the activity timeline, check direct shared devices, " +
+                        "and examine the wider network for indirectly connected accounts.",
                         cancellationToken: cancellationToken);
 
         if (!tools.EvidenceWasRequested)

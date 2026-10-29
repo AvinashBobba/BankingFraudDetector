@@ -238,3 +238,13 @@ ORDER BY nodeCount DESC;
 ```
 
 Expect two components with three and two nodes respectively. Component IDs can change across projections; they are not stable business identifiers. WCC identifies connected components, not fraudulent communities. Stream mode does not write results to stored nodes. The projection is an in-memory snapshot: rebuild after graph changes or a Neo4j restart. This exercise is documented for manual execution and has not been run by the agent.
+
+## Connected-component investigation increment
+
+Added ConnectedAccount, FindConnectedAccounts and a WCC-backed IAccountGraph query. GET /api/accounts/{accountId}/graph/connected-accounts returns other accounts in the same component; a missing projection maps to 503 through GraphProjectionUnavailableException. Registered the new use case in dependency injection.
+
+AccountGraphTools now exposes connected-component analysis alongside direct shared-device analysis. Unavailable projection results are explicitly distinguished from no connections. Component membership is snapshot-based context and does not explain an exact path or prove fraud. WCC currently runs per query and needs a scheduled/precomputed approach before use on large graphs.
+
+Extended synthetic seeds with account 5555... connected to 3333... through synthetic-device-bridge. Account 2222... directly shares a device with 3333..., while its component also includes 5555.... The startup seed script now automatically rebuilds fraud-device-graph after seeding; graph readiness follows projection creation. All existing destructive reset behavior remains enabled.
+
+Verified the running projection contains seven nodes and ten projected relationships. The Release solution build passed with existing dependency warnings. Live controller/model behavior was not exercised in this increment. No EF migration was needed. Next: connection-path evidence for indirect links.

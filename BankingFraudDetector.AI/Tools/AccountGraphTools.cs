@@ -7,6 +7,7 @@ namespace BankingFraudDetector.AI.Tools;
 public sealed class AccountGraphTools(
     Guid accountId,
     FindLinkedAccounts findLinkedAccounts,
+    FindConnectedAccounts findConnectedAccounts,
     CancellationToken cancellationToken)
 {
     [Description(
@@ -30,4 +31,39 @@ public sealed class AccountGraphTools(
                 "The graph may be incomplete and is not time-filtered."
         });
     }
+
+    [Description(
+    "Find other accounts in the same connected component as the account " +
+    "under investigation, including indirect connections through accounts " +
+    "and devices. Use when investigating a wider connected network. " +
+    "Results use a GDS snapshot and do not establish fraud or explain " +
+    "the exact connection path.")]
+public async Task<string> FindAccountsInConnectedComponent()
+{
+    try
+    {
+        var accounts = await findConnectedAccounts.ExecuteAsync(
+            accountId,
+            cancellationToken);
+
+        return JsonSerializer.Serialize(new
+        {
+            available = true,
+            accountId,
+            connectedAccounts = accounts,
+            limitation =
+                "Component membership includes indirect connections. " +
+                "The projection may be stale. Connectivity does not prove fraud."
+        });
+    }
+    catch (GraphProjectionUnavailableException)
+    {
+        return JsonSerializer.Serialize(new
+        {
+            available = false,
+            accountId,
+            reason = "The GDS projection is unavailable."
+        });
+    }
+}
 }
