@@ -263,3 +263,37 @@ GET /api/accounts/{accountId}/graph/paths/{targetAccountId} returns found, maxHo
 Validation: full Release build passed with existing dependency warnings. A temporary local API instance was used to verify direct links (3333...), component membership (3333... and 5555...), the ordered four-hop path from 2222... to 5555..., no path to 4444..., and HTTP 400 for identical endpoints. Live model selection of the new tool was not tested. No new unit tests or EF migrations were added.
 
 This closes the current graph MVP scope: destructive local reset/seeding, GDS projection readiness, shared-device lookup, WCC membership, path evidence, API endpoints and agent tools. More graph algorithms, bank/email/IP graph expansion, temporal projections, ingestion synchronization and production-scale analytics scheduling are future requirements, not blockers for moving to Angular. WCC still runs per request on a snapshot, and current graph evidence may differ from saved assessment-time data. The development graph resets on every restart as requested.
+
+## Angular analyst workspace
+
+Added BankingFraudDetector.Client using Angular 21 (compatible with the installed Node 22.15). The local dashboard looks up account assessment history, runs and saves deterministic assessments for a selected time window, displays saved rule findings and evidence IDs, queries direct and component graph links, traces connection paths, and invokes the local AI investigator. It uses live API data with explicit loading, empty and failure states. Model summaries are rendered as text and are not saved. Dates entered in the form use the browser's local time and are converted to UTC for the API.
+
+Start the existing API/Aspire host, then:
+
+```powershell
+cd BankingFraudDetector.Client
+npm ci
+npm start
+```
+
+Open http://localhost:4200. The Angular development proxy forwards /api/** to https://localhost:7064; update proxy.conf.cjs to the API HTTPS address shown by Aspire if different, then restart Angular. Certificate verification is disabled only in this local proxy for the development certificate. No .NET CORS changes or database migrations were needed. The client launcher reuses a running API or starts the local API when the default endpoint is unavailable. For deployment, configure a same-origin reverse proxy for /api or an explicit production API configuration; ng serve is development tooling.
+
+Use seeded account 22222222-2222-2222-2222-222222222222 to inspect existing assessments and graph context. Run a new assessment only when intentionally creating another saved record. AI requests can take several minutes and require Ollama and the configured MCP server DLL. Authentication remains a later milestone.
+
+Client validation: Angular production build passed; development server returned HTTP 200. Verified assessment history and detail through the proxy, then direct links, two connected accounts and a five-node indirect path against a temporary current API instance. The pre-existing API on 7064 was stale and must be restarted to use the latest graph changes. Temporary verification servers were stopped and the proxy target restored to 7064. No additional .NET source changes were made for the dashboard. Live AI generation, saving a new assessment through the browser and visual browser QA were not performed.
+
+
+## Dashboard startup and connection fix
+
+Run npm start from BankingFraudDetector.Client. The launcher probes the API /health endpoint before serving Angular. It reuses an already-running API; if the default local endpoint is unavailable, it runs the API with its HTTPS launch profile and waits for readiness. Ctrl+C stops only processes launched by this script, leaving a pre-existing API alone. This starts the API directly, not the Aspire host. Start Neo4j separately with docker compose up -d --wait and ensure API user secrets are configured.
+
+For an existing Aspire-managed API with a different endpoint:
+
+```powershell
+$env:API_TARGET = "https://localhost:YOUR_API_PORT"
+npm start
+```
+
+With an explicit API_TARGET the launcher requires that endpoint to be running and does not start another API. Remove the variable with Remove-Item Env:API_TARGET to restore defaults. All browser calls remain same-origin /api requests; proxy.conf.cjs chooses the target, defaulting to https://127.0.0.1:7064. Development certificate validation is bypassed only for local startup/proxy checks. No .NET CORS changes were introduced.
+
+The observed error was reproduced as ECONNREFUSED from the development proxy when no API listener was available. Verified the repaired launcher with an already-running API, Angular HTTP responses, three history records, two component members and a five-node connection path through port 4200. The auto-start branch is provided but was not exercised against the user's already-running API. Failed history loading is distinguished from an empty history in the UI. Live browser visual QA and AI generation remain unverified.
