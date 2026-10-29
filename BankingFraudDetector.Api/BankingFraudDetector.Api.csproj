@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\BankingFraudDetector.Application\BankingFraudDetector.Application.csproj" />
     <ProjectReference Include="..\BankingFraudDetector.Infrastructure\BankingFraudDetector.Infrastructure.csproj" />
+    <ProjectReference Include="..\BankingFraudDetector.AI\BankingFraudDetector.AI.csproj" />
   </ItemGroup>
 
 </Project>

@@ -121,7 +121,7 @@ Additional Application tests are deferred at the user's request. Existing domain
 ## Latest increment: assessment history and AI boundary
 
 - Added account assessment history, returning the newest 50 summaries through `GET /api/assessments/accounts/{accountId}`.
-- Added the AI class library referencing Application, plus `IAssessmentInvestigator` and `InvestigationSummary` contracts. Microsoft Agent Framework, Ollama integration and the investigator implementation are not yet installed or implemented.
+- Added the AI class library referencing Application, plus `IAssessmentInvestigator` and `InvestigationSummary` contracts. The AI boundary was subsequently implemented in the local Ollama investigation increment below.
 - `PAY-001` detects bank details changed followed by a sale request within 60 minutes and contributes 60 points. Scores add across matching rules; both current rules produce 140 points / High. Points are not probabilities.
 - `POST /api/assessments` runs and saves an assessment; `GET /api/assessments/{assessmentId}` returns its stored findings and evidence IDs.
 - `AlignAssessmentFindingMapping` corrects the original singular finding table name and applies configured field lengths. Keep all migrations; do not recreate the database.
@@ -145,11 +145,22 @@ Use `BankingFraudDetector.Api/BankingFraudDetector.Api.http` for manual scenario
 
 ## AI and remaining roadmap
 
-Ollama is installed on the original development machine, but the model pull failed with a network reset; a working downloaded model has not yet been verified. The intended starting model is `qwen3:4b-instruct`. A fresh environment needs its own Ollama installation and model download. Model and tool-call behavior must be verified before wiring agents.
+Ollama and qwen3:4b-instruct are now installed on the original development machine. The intended starting model is `qwen3:4b-instruct`. A fresh environment needs its own Ollama installation and model download. Model and tool-call behavior must be verified before wiring agents.
 
-Remaining features: Microsoft Agent Framework orchestration with local Ollama, narrow investigation tools, a separate MCP server, Angular analyst UI, local Neo4j and graph data science, and Microsoft Entra authentication/authorization. These are planned capabilities, not completed integrations. Use synthetic account data during development.
+Remaining features: live tool-call evaluation, a separate MCP server, Angular analyst UI, local Neo4j and graph data science, and Microsoft Entra authentication/authorization. These are planned capabilities, not completed integrations. Use synthetic account data during development.
 
 Known dependency issue: restore reports NU1902/NU1903 for transitive `System.Security.Cryptography.Pkcs` 9.0.11. It has not been resolved in this increment.
 
 
 Latest validation: the complete solution built successfully in Release configuration. Existing NU1902/NU1903 warnings remain. Additional unit tests were deferred as requested.
+
+## Local Ollama investigation increment
+
+- Added Microsoft.Agents.AI 1.26.0 and OllamaSharp 5.5.0, configuration validation through OllamaOptions, and dependency registration.
+- POST /api/assessments/{assessmentId}/investigations returns an AI explanation of a saved assessment. Missing assessments return 404; downstream timeouts return 504 when the caller has not cancelled.
+- The client uses a configurable timeout (300 seconds by default). Local generation and multiple tool-call rounds may be slow.
+- AssessmentInvestigationTools keeps tool implementations separate from agent orchestration. GetAssessmentEvidence exposes the loaded findings; GetAccountActivityEvents queries events for the assessment's fixed account and window.
+- AIFunctionFactory exposes only the two registered tool definitions. The model requests calls and Agent Framework executes the C# methods. The code rejects an investigation if the evidence tool was never called; instructions alone do not guarantee call order or factual accuracy.
+- Current activity can contain events inserted after the saved assessment. It does not change the saved score. Summaries are returned without persistence.
+- Start Ollama with qwen3:4b-instruct available, restart the API, and use the investigation POST in the HTTP file with an existing assessment ID. Breakpoints in tool methods reveal model selections.
+- No database migration was needed. Live model/tool behavior has not been verified by the agent in this increment; the earlier request exceeded the original 100-second timeout.
