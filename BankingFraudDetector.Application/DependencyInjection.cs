@@ -17,6 +17,7 @@ public static class DependencyInjection
         services.AddSingleton<TimeProvider>(TimeProvider.System);
         services.AddScoped<RunAccountAssessment>();
         services.AddScoped<GetAssessment>();
+        services.AddScoped<GetAccountAssessmentHistory>();
         return services;
     }
 }

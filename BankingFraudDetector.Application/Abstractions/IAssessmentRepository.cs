@@ -11,4 +11,8 @@ public interface IAssessmentRepository
     Task<AssessmentRecord?> GetByIdAsync(
         Guid assessmentId,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<AssessmentRecord>> GetRecentByAccountAsync(
+        Guid accountId,
+        CancellationToken cancellationToken = default);
 }

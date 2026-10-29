@@ -36,4 +36,24 @@ public sealed class EfAssessmentRepository(FraudDbContext dbContext)
                 x => x.Id == assessmentId,
                 cancellationToken);
     }
+
+    public async Task<IReadOnlyList<AssessmentRecord>> GetRecentByAccountAsync(
+    Guid accountId,
+    CancellationToken cancellationToken = default)
+    {
+        if (accountId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "An account ID is required.",
+                nameof(accountId));
+        }
+
+        return await dbContext.AssessmentRecords
+            .AsNoTracking()
+            .Where(x => x.AccountId == accountId)
+            .OrderByDescending(x => x.AssessedAtUtc)
+            .ThenByDescending(x => x.Id)
+            .Take(50)
+            .ToListAsync(cancellationToken);
+    }
 }

@@ -115,3 +115,7 @@ Content-Type: application/json
 ### Retrieve the saved assessment — paste the returned assessmentId
 GET {{hostAddress}}/api/assessments/1C3EDB4F-774E-4029-AA69-55C7AD0F3170
 Accept: application/json
+
+### Latest 50 saved assessments, newest first
+GET {{hostAddress}}/api/assessments/accounts/22222222-2222-2222-2222-222222222222
+Accept: application/json

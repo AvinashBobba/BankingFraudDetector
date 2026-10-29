@@ -8,7 +8,8 @@ namespace BankingFraudDetector.Api.Controllers;
 [Route("api/assessments")]
 public sealed class AssessmentsController(
     RunAccountAssessment runAssessment,
-    GetAssessment getAssessment) : ControllerBase
+    GetAssessment getAssessment,
+    GetAccountAssessmentHistory getHistory) : ControllerBase
 {
     [HttpPost]
     public async Task<IActionResult> Run(
@@ -84,5 +85,35 @@ public sealed class AssessmentsController(
                     x.EvidenceEventIds
                 })
         });
+    }
+
+    [HttpGet("accounts/{accountId:guid}")]
+    public async Task<IActionResult> GetHistory(
+    Guid accountId,
+    CancellationToken cancellationToken)
+    {
+        if (accountId == Guid.Empty)
+        {
+            ModelState.AddModelError(
+                "accountId", "An account ID is required.");
+
+            return ValidationProblem(ModelState);
+        }
+
+        var assessments = await getHistory.ExecuteAsync(
+            accountId,
+            cancellationToken);
+
+        return Ok(assessments.Select(x => new
+        {
+            x.Id,
+            x.AccountId,
+            x.AssessedAtUtc,
+            x.FromInclusiveUtc,
+            x.ToExclusiveUtc,
+            x.TotalScore,
+            riskBand = x.RiskBand.ToString(),
+            x.RuleSetVersion
+        }));
     }
 }
